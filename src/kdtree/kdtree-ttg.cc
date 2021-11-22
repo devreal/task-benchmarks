@@ -4,17 +4,14 @@
 
 #include "../util/chrono.h"
 
-std::atomic<int> task_counter = 0;
-
 using namespace ttg;
 
 auto make_ttg() {
   Edge<Idx, void> I2D, D2D;
 
-  auto init = make_tt<void>([](std::tuple<Out<Idx, void>> &outs) { ++task_counter; sendk<0>(Idx{}, outs); }, edges(), edges(I2D));
+  auto init = make_tt<void>([](std::tuple<Out<Idx, void>> &outs) {sendk<0>(Idx{}, outs); }, edges(), edges(I2D));
 
   auto down = make_tt([](const Idx& idx, std::tuple<Out<Idx, void>> &outs) {
-    ++task_counter;
     if (idx.l+1<LMAX) {
       ::sendk<0>(Idx(idx.l+1, {{idx.x[0]*2}}), outs);
       ::sendk<0>(Idx(idx.l+1, {{idx.x[0]*2+1}}), outs);
@@ -41,7 +38,7 @@ int main(int argc, char* argv[]) {
   ttg_fence(ttg_default_execution_context());
   auto t1 = now();
 
-  std::cout << "# of tasks = " << task_counter.load() << std::endl;
+  std::cout << "# of tasks = " << static_cast<uint64_t>(std::pow(2, LMAX)) << std::endl;
   std::cout << "time elapsed (microseconds) = " << duration_in_mus(t0, t1) << std::endl;
 
   return 0;
